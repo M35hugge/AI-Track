@@ -21,7 +21,7 @@ let exploitationCount = 0;
 // Create a QLearningAgent with possible actions: 'left', 'right', 'straight'
 const actionSpace = ['left', 'right', 'straight'];
 const agent = new QLearningAgent(actionSpace);
-
+let brake=false;
 // Car class
 class Car {
     constructor(x, y, color, agent) {
@@ -29,8 +29,9 @@ class Car {
         this.y = y;
         this.vx = 0;  // Velocity in x direction
         this.vy = 0;  // Velocity in y direction
-        this.acceleration = 0.1; // Rate of acceleration
-        this.maxSpeed = 3;  // Maximum speed
+        this.acceleration = 0.3; // Rate of acceleration
+       
+        this.maxSpeed = 10;  // Maximum speed
         this.angle = 0;
         this.maxSteeringAngle = 0.1;
         this.color = color;
@@ -50,7 +51,6 @@ class Car {
             // Apply physics: calculate acceleration based on action and friction
             this.vx += Math.cos(this.angle) * this.acceleration;
             this.vy += Math.sin(this.angle) * this.acceleration;
-
             // Apply friction: reduce speed over time
             this.vx *= this.friction;
             this.vy *= this.friction;
@@ -61,7 +61,10 @@ class Car {
                 this.vx = (this.vx / speed) * this.maxSpeed;
                 this.vy = (this.vy / speed) * this.maxSpeed;
             }
-
+            if (brake) {
+                this.vx *= 0.5;  // Apply a braking factor, decelerating the car
+                this.vy *= 0.5;  // Apply the same braking factor to vertical velocity
+            }
             // Update position
             this.x += this.vx;
             this.y += this.vy;
@@ -215,7 +218,11 @@ function updateCars() {
         drawWall();
 
         cars.forEach((car) => {
-            car.move(trackData);
+            if (Math.abs(car.dx) < 50 && Math.abs(car.dy) < 50) {  // The car is near the target
+                car.move(trackData, true);  // Apply braking as the car approaches the target
+            } else {
+                car.move(trackData);  // Move normally
+            }
             ctx.beginPath();
             ctx.arc(car.x, car.y, 20, 0, Math.PI * 2);
             ctx.fillStyle = car.color;
